@@ -9,7 +9,8 @@ from pathlib import Path
 # CONFIG
 # ==========================
 
-API_URL = "http://localhost:8000/api/v1/predict"
+# API_URL = "http://localhost:8000/api/v1/predict"
+API_URL = st.secrets["API_URL"]
 
 BASE_DIR = Path(__file__).resolve().parent
 

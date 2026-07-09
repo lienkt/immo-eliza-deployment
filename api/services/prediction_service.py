@@ -1,4 +1,4 @@
-from api.ml.predict import predict
+from ml.predict import predict
 
 
 def predict_price(data: dict):

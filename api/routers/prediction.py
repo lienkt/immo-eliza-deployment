@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
-from api.schemas.prediction import PropertyInput
-from api.services.prediction_service import predict_price
+from schemas.prediction import PropertyInput
+from services.prediction_service import predict_price
 
 router = APIRouter(
     prefix="/api/v1"
