@@ -274,22 +274,22 @@ def validate_inputs(data):
         )
 
     # Address
-    if not data["province"].strip():
+    if not data["province"] or not data["province"].strip():
         errors["province"] = "Province cannot be empty."
 
-    if not data["city"].strip():
+    if not data["city"] or not data["city"].strip():
         errors["city"] = "City cannot be empty."
 
-    if not data["nearest_city"].strip():
+    if not data["nearest_city"] or not data["nearest_city"].strip():
         errors["nearest_city"] = "Nearest city cannot be empty."
     
-    if not data["postcode"].strip():
+    if not data["postcode"] or not data["postcode"].strip():
         errors["postcode"] = "Postcode cannot be empty."
 
-    if not data["street"].strip():
+    if not data["street"] or not data["street"].strip():
         errors["street"] = "Street cannot be empty."
     
-    if not data["house_number"].strip():
+    if not data["house_number"] or not data["house_number"].strip():
         errors["house_number"] = "House number cannot be empty."
     
     # Bedrooms
@@ -522,12 +522,6 @@ with st.form("property_form"):
                 placeholder="Select a city"
             )
 
-        # nearest_city_distance = st.number_input(
-        #     "Distance to nearest city (km)",
-        #     min_value=0.0,
-        #     value=6.07
-        # )
-
     # ======================
     # ACCESSIBILITY
     # ======================
@@ -576,28 +570,6 @@ with st.form("property_form"):
 # PREDICTION
 # ==========================
 if submit:
-    full_address = f"{house_number} {street}, {postcode} {city}, Belgium"
-
-    st.write("Address:", full_address)
-
-    latitude, longitude = get_coordinates(
-        full_address
-    )
-
-    st.write("Latitude:", latitude)
-    st.write("Longitude:", longitude)
-
-    nearest_city_distance = haversine_distance(
-        latitude,
-        longitude,
-        BIG_CITIES[nearest_city]["latitude"],
-        BIG_CITIES[nearest_city]["longitude"]
-    )
-
-    get_coordinates(
-            f"{BIG_CITIES[nearest_city]['name']}, Belgium"
-        )
-
 
     data = {
         "property_type": property_type,
@@ -634,6 +606,29 @@ if submit:
     # ======================
     # PAYLOAD
     # ======================
+
+    full_address = f"{house_number} {street}, {postcode} {city}, Belgium"
+
+    st.write("Address:", full_address)
+
+    latitude, longitude = get_coordinates(
+        full_address
+    )
+
+    st.write("Latitude:", latitude)
+    st.write("Longitude:", longitude)
+
+    nearest_city_distance = haversine_distance(
+        latitude,
+        longitude,
+        BIG_CITIES[nearest_city]["latitude"],
+        BIG_CITIES[nearest_city]["longitude"]
+    )
+
+    get_coordinates(
+            f"{BIG_CITIES[nearest_city]['name']}, Belgium"
+        )
+    
     payload = {
         "property_type": property_type,
         "city": city,
