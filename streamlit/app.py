@@ -3,6 +3,7 @@ import requests
 import pandas as pd
 from geopy.geocoders import Nominatim
 from math import radians, sin, cos, sqrt, atan2
+from pathlib import Path
 
 # ==========================
 # CONFIG
@@ -10,8 +11,10 @@ from math import radians, sin, cos, sqrt, atan2
 
 API_URL = "http://localhost:8000/api/v1/predict"
 
+BASE_DIR = Path(__file__).resolve().parent
+
 cities_df = pd.read_csv(
-    "data/communicipalities.csv",
+    BASE_DIR / "data" / "communicipalities.csv",
     sep=";"
 )
 
