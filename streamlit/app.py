@@ -1,6 +1,8 @@
 import streamlit as st
 import requests
-
+import pandas as pd
+from geopy.geocoders import Nominatim
+from math import radians, sin, cos, sqrt, atan2
 
 # ==========================
 # CONFIG
@@ -8,7 +10,68 @@ import requests
 
 API_URL = "http://localhost:8000/api/v1/predict"
 
+cities_df = pd.read_csv(
+    "data/communicipalities.csv",
+    sep=";"
+)
 
+BIG_CITIES = {
+    'antwerp': {
+        "name": 'Antwerp',
+        "longitude": 4.4025,
+        "latitude": 51.2194
+    },
+    'brussels': {
+        "name": 'Brussels',
+        "longitude": 4.3499,
+        "latitude": 50.8467
+    },
+    'ghent': {
+        "name": 'Ghent',
+        "longitude": 3.7174,
+        "latitude": 51.0543
+    },
+    'charleroi': {
+        "name": 'Charleroi',
+        "longitude": 4.4446,
+        "latitude": 50.4108
+    },
+    'liege': {
+        "name": 'Liege',
+        "longitude": 5.5734,
+        "latitude": 50.6451
+    },
+    'bruges': {
+        "name": 'Bruges',
+        "longitude": 3.2247,
+        "latitude": 51.2093
+    },
+    'namur': {
+        "name": 'Namur',
+        "longitude": 4.8719,
+        "latitude": 50.4674
+    },
+    'leuven': {
+        "name": 'Leuven',
+        "longitude": 4.7005,
+        "latitude": 50.8798
+    }
+}
+
+PROVINCES = {
+    "antwerp": "Antwerp",
+    "brussels": "Brussels",
+    "limburg": "Limburg", 
+    "east-flanders": "East Flanders", 
+    "vlaams-brabant": "Flemish Brabant", 
+    "west-flanders": "West Flanders",
+    "hainaut": "Hainaut", 
+    "liege": "Liège", 
+    "luxembourg": "Luxembourg", 
+    "namur": "Namur", 
+    "brabant-wallon": "Walloon Brabant"
+}
+  
 # ==========================
 # PAGE CONFIG
 # ==========================
@@ -51,7 +114,7 @@ st.markdown(
         margin-bottom: 15px;
     }
 
-    /* Predict button */
+    /* Estimate button */
     div.stButton > button,
     div.stFormSubmitButton > button {
         width: 100%;
@@ -138,6 +201,57 @@ if "warnings" not in st.session_state:
     st.session_state.warnings = {}
 
 # ==========================
+# Geolocation
+# ==========================
+geolocator = Nominatim(
+    user_agent="immo-eliza"
+)
+
+def get_coordinates(address):
+
+    location = geolocator.geocode(
+        address
+    )
+
+    if location:
+        return (
+            location.latitude,
+            location.longitude
+        )
+
+    return None, None
+
+def haversine_distance(
+    lat1,
+    lon1,
+    lat2,
+    lon2
+):
+    R = 6371  # km
+
+    lat1 = radians(lat1)
+    lon1 = radians(lon1)
+    lat2 = radians(lat2)
+    lon2 = radians(lon2)
+
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+
+    a = (
+        sin(dlat / 2) ** 2
+        + cos(lat1)
+        * cos(lat2)
+        * sin(dlon / 2) ** 2
+    )
+
+    c = 2 * atan2(
+        sqrt(a),
+        sqrt(1 - a)
+    )
+
+    return R * c
+
+# ==========================
 # VALIDATION FUNCTION
 # ==========================
 
@@ -147,14 +261,6 @@ def validate_inputs(data):
     warnings = {}
 
     # Text
-    if not data["city"].strip():
-        errors["city"] = "City cannot be empty."
-
-    if not data["province"].strip():
-        errors["province"] = "Province cannot be empty."
-
-    if not data["nearest_city"].strip():
-        errors["nearest_city"] = "Nearest city cannot be empty."
 
     # Surface
     if data["livable_surface"] <= 0:
@@ -167,6 +273,25 @@ def validate_inputs(data):
             "Total surface cannot be smaller than living area."
         )
 
+    # Address
+    if not data["province"].strip():
+        errors["province"] = "Province cannot be empty."
+
+    if not data["city"].strip():
+        errors["city"] = "City cannot be empty."
+
+    if not data["nearest_city"].strip():
+        errors["nearest_city"] = "Nearest city cannot be empty."
+    
+    if not data["postcode"].strip():
+        errors["postcode"] = "Postcode cannot be empty."
+
+    if not data["street"].strip():
+        errors["street"] = "Street cannot be empty."
+    
+    if not data["house_number"].strip():
+        errors["house_number"] = "House number cannot be empty."
+    
     # Bedrooms
     if (
         data["property_type"] == "house"
@@ -190,21 +315,6 @@ def validate_inputs(data):
     if data["build_year"] < 1850:
         warnings["build_year"] = (
             "Very old property. Please verify."
-        )
-
-    # Coordinates
-    if not (
-        49 <= data["latitude"] <= 52
-    ):
-        errors["latitude"] = (
-            "Latitude should be between 49 and 52."
-        )
-
-    if not (
-        2 <= data["longitude"] <= 7
-    ):
-        errors["longitude"] = (
-            "Longitude should be between 2 and 7."
         )
 
     # Energy
@@ -242,25 +352,6 @@ with st.form("property_form"):
                     "apartment"
                 ]
             )
-            city = st.text_input(
-                "City",
-                ""
-            )
-
-            if show_errors and "city" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["city"]
-                )
-                
-            province = st.text_input(
-                "Province",
-                ""
-            )
-
-            if show_errors and "province" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["province"]
-                )
 
         with col2:
             property_state = st.selectbox(
@@ -366,42 +457,76 @@ with st.form("property_form"):
 
         with col1:
 
-            latitude = st.number_input(
-                "Latitude",
-                value=0
+            house_number = st.text_input(
+                "House Number",
+                placeholder="e.g. 25"
             )
-
-            if show_errors and "latitude" in st.session_state.errors:
+            if show_errors and "house_number" in st.session_state.errors:
                 st.error(
-                    st.session_state.errors["latitude"]
+                    st.session_state.errors["house_number"]
+                )
+
+            street = st.text_input(
+                "Street",
+                placeholder="e.g. Rue de la Loi"
+            )
+            if show_errors and "street" in st.session_state.errors:
+                st.error(
+                    st.session_state.errors["street"]
+                )
+
+            postcode = st.text_input(
+                "Postcode",
+                placeholder="e.g. 1000"
+            )
+            if show_errors and "postcode" in st.session_state.errors:
+                st.error(
+                    st.session_state.errors["postcode"]
                 )
 
         with col2:
 
-            longitude = st.number_input(
-                "Longitude",
-                value=0
+            province = st.selectbox(
+                "Province",
+                options=list(PROVINCES.keys()),  
+                format_func=lambda key: PROVINCES[key],
+                index=None,
+                placeholder="Select a province"
             )
-            if show_errors and "longitude" in st.session_state.errors:
+
+            if show_errors and "province" in st.session_state.errors:
                 st.error(
-                    st.session_state.errors["longitude"]
+                    st.session_state.errors["province"]
                 )
 
-        nearest_city = st.text_input(
-            "Nearest City",
-            ""
-        )
+            city = st.selectbox(
+                "Property City",
+                options=sorted(
+                    cities_df["Municipality_NL"]
+                    .dropna()
+                    .unique()
+                ),
+                index=None,
+                placeholder="Type or select a city"
+            )
+            if show_errors and "city" in st.session_state.errors:
+                st.error(
+                    st.session_state.errors["city"]
+                )
 
-        if show_errors and "nearest_city" in st.session_state.errors:
-            st.error(
-                st.session_state.errors["nearest_city"]
+            nearest_city = st.selectbox(
+                "Nearest Major City",
+                options=list(BIG_CITIES.keys()),  
+                format_func=lambda key: BIG_CITIES[key]["name"],
+                index=None,
+                placeholder="Select a city"
             )
 
-        nearest_city_distance = st.number_input(
-            "Distance to nearest city (km)",
-            min_value=0.0,
-            value=6.07
-        )
+        # nearest_city_distance = st.number_input(
+        #     "Distance to nearest city (km)",
+        #     min_value=0.0,
+        #     value=6.07
+        # )
 
     # ======================
     # ACCESSIBILITY
@@ -451,6 +576,28 @@ with st.form("property_form"):
 # PREDICTION
 # ==========================
 if submit:
+    full_address = f"{house_number} {street}, {postcode} {city}, Belgium"
+
+    st.write("Address:", full_address)
+
+    latitude, longitude = get_coordinates(
+        full_address
+    )
+
+    st.write("Latitude:", latitude)
+    st.write("Longitude:", longitude)
+
+    nearest_city_distance = haversine_distance(
+        latitude,
+        longitude,
+        BIG_CITIES[nearest_city]["latitude"],
+        BIG_CITIES[nearest_city]["longitude"]
+    )
+
+    get_coordinates(
+            f"{BIG_CITIES[nearest_city]['name']}, Belgium"
+        )
+
 
     data = {
         "property_type": property_type,
@@ -461,9 +608,10 @@ if submit:
         "total_surface": total_surface,
         "bedrooms": bedrooms,
         "build_year": build_year,
-        "latitude": latitude,
-        "longitude": longitude,
-        "energy_consumption": energy_consumption
+        "energy_consumption": energy_consumption,
+        "postcode": postcode,
+        "street": street,
+        "house_number": house_number
     }
 
     errors, warnings = validate_inputs(data)
@@ -539,7 +687,7 @@ if submit:
         prediction = result["prediction"]
 
         st.success(
-            "Prediction completed!"
+            "Estimation completed!"
         )
 
         st.metric(
