@@ -156,27 +156,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-# ==========================
-# SIDEBAR
-# ==========================
-
-# with st.sidebar:
-
-#     st.title("Immo Eliza")
-
-#     st.write(
-#         """
-#         Belgian House Price Estimation AI
-
-#         Model features:
-
-#         ✅ Location  
-#         ✅ Surface  
-#         ✅ Property condition  
-#         ✅ Amenities  
-#         ✅ Accessibility  
-#         """
-#     )
 
 # ==========================
 # HEADER
@@ -203,6 +182,9 @@ if "errors" not in st.session_state:
 
 if "warnings" not in st.session_state:
     st.session_state.warnings = {}
+
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
 # ==========================
 # Geolocation
@@ -253,6 +235,14 @@ def haversine_distance(
         sqrt(1 - a)
     )
 
+    if None in [
+        lat1,
+        lon1,
+        lat2,
+        lon2
+    ]:
+        return None
+    
     return R * c
 
 # ==========================
@@ -263,8 +253,6 @@ def validate_inputs(data):
 
     errors = {}
     warnings = {}
-
-    # Text
 
     # Surface
     if data["livable_surface"] <= 0:
@@ -278,13 +266,13 @@ def validate_inputs(data):
         )
 
     # Address
-    if not data["province"] or not data["province"].strip():
+    if not data["province"]:
         errors["province"] = "Province cannot be empty."
 
-    if not data["city"] or not data["city"].strip():
+    if not data["city"]:
         errors["city"] = "City cannot be empty."
 
-    if not data["nearest_city"] or not data["nearest_city"].strip():
+    if not data["nearest_city"]:
         errors["nearest_city"] = "Nearest city cannot be empty."
     
     if not data["postcode"] or not data["postcode"].strip():
@@ -326,7 +314,6 @@ def validate_inputs(data):
         warnings["energy_consumption"] = (
             "Energy consumption is missing."
         )
-
     elif data["energy_consumption"] > 500:
         warnings["energy_consumption"] = (
             "Energy consumption is unusually high."
@@ -334,10 +321,46 @@ def validate_inputs(data):
 
     return errors, warnings
 
+def show_error(field):
+    if (
+        st.session_state.submitted
+        and field in st.session_state.errors
+    ):
+        st.error(st.session_state.errors[field])
+
+
+def show_warning(field):
+    if (
+        st.session_state.submitted
+        and field in st.session_state.warnings
+    ):
+        st.warning(st.session_state.warnings[field])
+
+# ==============================================================
+# KIỂM TRA LỖI REALTIME TRƯỚC KHI DỰNG FORM (SỬA LỖI KHÔNG RENDER LẠI)
+# ==============================================================
+data_preview = {
+    "property_type": st.session_state.get("property_type", "house"),
+    "city": st.session_state.get("city", None),
+    "province": st.session_state.get("province", None),
+    "nearest_city": st.session_state.get("nearest_city", None),
+    "livable_surface": st.session_state.get("livable_surface", 0),
+    "total_surface": st.session_state.get("total_surface", 0),
+    "bedrooms": st.session_state.get("bedrooms", 2),
+    "build_year": st.session_state.get("build_year", 2000),
+    "energy_consumption": st.session_state.get("energy_consumption", 0),
+    "postcode": st.session_state.get("postcode", ""),
+    "street": st.session_state.get("street", ""),
+    "house_number": st.session_state.get("house_number", "")
+}
+
+errors, warnings = validate_inputs(data_preview)
+st.session_state.errors = errors
+st.session_state.warnings = warnings
+
 # ==========================
 # FORM
 # ==========================
-show_errors = bool(st.session_state.errors)
 with st.form("property_form"):
 
     # ======================
@@ -354,7 +377,8 @@ with st.form("property_form"):
                 [
                     "house",
                     "apartment"
-                ]
+                ],
+                key="property_type"
             )
 
         with col2:
@@ -364,20 +388,18 @@ with st.form("property_form"):
                     "Normal",
                     "Good",
                     "To renovate"
-                ]
+                ],
+                key="property_state"
             )
             bedrooms = st.number_input(
                 "Bedrooms",
                 min_value=0,
                 max_value=20,
-                value=2
+                value=2,
+                key="bedrooms"
             )
-
-            if show_errors and "bedrooms" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["bedrooms"]
-                )
-                
+            show_error("bedrooms")
+            
     # ======================
     # SURFACE
     # ======================
@@ -391,24 +413,18 @@ with st.form("property_form"):
             livable_surface = st.number_input(
                 "Living Area (m²)",
                 min_value=0,
-                value=0
+                value=0,
+                key="livable_surface"
             )
-
-            if show_errors and "livable_surface" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["livable_surface"]
-                )
+            show_error("livable_surface")
 
             total_surface = st.number_input(
                 "Total Surface (m²)",
                 min_value=0,
-                value=0
+                value=0,
+                key="total_surface"
             )
-
-            if show_errors and "total_surface" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["total_surface"]
-                )
+            show_error("total_surface")
 
         with col2:
 
@@ -416,18 +432,12 @@ with st.form("property_form"):
                 "Build Year",
                 min_value=1850,
                 max_value=2026,
-                value=2000
+                value=2000,
+                key="build_year"
             )
+            show_error("build_year")
+            show_warning("build_year")
 
-            if show_errors and "build_year" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["build_year"]
-                )
-
-            if show_errors and "build_year" in st.session_state.warnings:
-                st.warning(
-                    st.session_state.warnings["build_year"]
-                )
     # ======================
     # FEATURES
     # ======================
@@ -438,17 +448,20 @@ with st.form("property_form"):
 
         with col1:
             garage = st.checkbox(
-                "Garage"
+                "Garage",
+                key="garage"
             )
 
         with col2:
             terrace = st.checkbox(
-                "Terrace"
+                "Terrace",
+                key="terrace"
             )
 
         with col3:
             swimming_pool = st.checkbox(
-                "Swimming Pool"
+                "Swimming Pool",
+                key="swimming_pool"
             )
 
     # ======================
@@ -463,31 +476,25 @@ with st.form("property_form"):
 
             house_number = st.text_input(
                 "House Number",
-                placeholder="e.g. 25"
+                placeholder="e.g. 25",
+                key="house_number"
             )
-            if show_errors and "house_number" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["house_number"]
-                )
+            show_error("house_number")
 
             street = st.text_input(
                 "Street",
-                placeholder="e.g. Rue de la Loi"
+                placeholder="e.g. Rue de la Loi",
+                key="street"
             )
-            if show_errors and "street" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["street"]
-                )
+            show_error("street")
 
             postcode = st.text_input(
                 "Postcode",
-                placeholder="e.g. 1000"
+                placeholder="e.g. 1000",
+                key="postcode"
             )
-            if show_errors and "postcode" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["postcode"]
-                )
-
+            show_error("postcode")
+            
         with col2:
 
             province = st.selectbox(
@@ -495,13 +502,10 @@ with st.form("property_form"):
                 options=list(PROVINCES.keys()),  
                 format_func=lambda key: PROVINCES[key],
                 index=None,
-                placeholder="Select a province"
+                placeholder="Select a province",
+                key="province"
             )
-
-            if show_errors and "province" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["province"]
-                )
+            show_error("province")
 
             city = st.selectbox(
                 "Property City",
@@ -511,20 +515,20 @@ with st.form("property_form"):
                     .unique()
                 ),
                 index=None,
-                placeholder="Type or select a city"
+                placeholder="Type or select a city",
+                key="city"
             )
-            if show_errors and "city" in st.session_state.errors:
-                st.error(
-                    st.session_state.errors["city"]
-                )
-
+            show_error("city")
+            
             nearest_city = st.selectbox(
                 "Nearest Major City",
                 options=list(BIG_CITIES.keys()),  
                 format_func=lambda key: BIG_CITIES[key]["name"],
                 index=None,
-                placeholder="Select a city"
+                placeholder="Select a city",
+                key="nearest_city"
             )
+            show_error("nearest_city")
 
     # ======================
     # ACCESSIBILITY
@@ -536,76 +540,50 @@ with st.form("property_form"):
             "Energy Consumption (kWh/m²/year)",
             min_value=0,
             max_value=1000,
-            value=0
+            value=0,
+            key="energy_consumption"
         )
-
-        if show_errors and "energy_consumption" in st.session_state.warnings:
-            st.warning(
-                st.session_state.warnings["energy_consumption"]
-            )
+        show_warning("energy_consumption")
 
         preschool_distance = st.number_input(
             "Preschool Distance (m)",
             min_value=0,
-            value=0
+            value=0,
+            key="preschool_distance"
         )
 
         train_station_distance = st.number_input(
             "Train Station Distance (m)",
             min_value=0,
-            value=0
+            value=0,
+            key="train_station_distance"
         )
 
         supermarket_distance = st.number_input(
             "Supermarket Distance (m)",
             min_value=0,
-            value=0
+            value=0,
+            key="supermarket_distance"
         )
         
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col2:
         submit = st.form_submit_button(
-        "Estimate Property Price",
-        use_container_width=True
+            "Estimate Property Price",
+            use_container_width=True
         )
 
 # ==========================
 # PREDICTION
 # ==========================
 if submit:
+    st.session_state.submitted = True
+    st.rerun()
 
-    data = {
-        "property_type": property_type,
-        "city": city,
-        "province": province,
-        "nearest_city": nearest_city,
-        "livable_surface": livable_surface,
-        "total_surface": total_surface,
-        "bedrooms": bedrooms,
-        "build_year": build_year,
-        "energy_consumption": energy_consumption,
-        "postcode": postcode,
-        "street": street,
-        "house_number": house_number
-    }
-
-    errors, warnings = validate_inputs(data)
-
-    # clear old validation
-    st.session_state.errors.clear()
-    st.session_state.warnings.clear()
-
-    st.session_state.errors.update(errors)
-    st.session_state.warnings.update(warnings)
-
-    # stop if errors
-    if errors:
-        st.rerun()
-
-    # warnings
-    for warning in st.session_state.warnings.values():
-        st.warning(warning)
+if st.session_state.submitted:
+    if st.session_state.errors:
+        st.stop()
 
     # ======================
     # PAYLOAD
@@ -618,6 +596,11 @@ if submit:
     latitude, longitude = get_coordinates(
         full_address
     )
+    if latitude is None or longitude is None:
+        st.error(
+            "Cannot find this address. Please check street, postcode and city."
+        )
+        st.stop()
 
     st.write("Latitude:", latitude)
     st.write("Longitude:", longitude)
@@ -655,8 +638,6 @@ if submit:
         "nearest_city": nearest_city,
         "nearest_city_distance": nearest_city_distance
     }
-
-
 
     # ======================
     # API CALL
