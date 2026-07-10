@@ -446,6 +446,13 @@ def show_warning(field):
     ):
         st.warning(st.session_state.warnings[field])
 
+
+def required_label(text):
+    st.markdown(
+        f"<div style='font-weight:600; margin-bottom:0.25rem;'>{text} <span style='color:#d62828;'>*</span></div>",
+        unsafe_allow_html=True,
+    )
+
 # ==============================================================
 # KIỂM TRA LỖI REALTIME TRƯỚC KHI DỰNG FORM (SỬA LỖI KHÔNG RENDER LẠI)
 # ==============================================================
@@ -482,13 +489,15 @@ with st.form("property_form"):
         col1,col2 = st.columns(2)
 
         with col1:
+            required_label("Property Type")
             property_type = st.selectbox(
-                "Property Type",
+                "",
                 [
                     "house",
                     "apartment"
                 ],
                 key="property_type"
+                , label_visibility="collapsed"
             )
 
             bedrooms = st.number_input(
@@ -530,14 +539,16 @@ with st.form("property_form"):
         col1,col2 = st.columns(2)
 
         with col1:
+            required_label("Living Area (m²)")
             livable_surface = st.slider(
-                "Living Area (m²)",
+                "",
                 min_value=0,
                 value=80,
                 step=10,
                 key="livable_surface",
                 max_value=1000,
-                help="Drag to adjust living area quickly."
+                help="Drag to adjust living area quickly.",
+                label_visibility="collapsed"
             )
             show_error("livable_surface")
 
@@ -587,42 +598,50 @@ with st.form("property_form"):
         col1,col2 = st.columns(2)
 
         with col1:
-
+            required_label("House Number")
             house_number = st.text_input(
-                "House Number",
+                "",
                 placeholder="e.g. 25",
                 key="house_number"
+                , label_visibility="collapsed"
             )
             show_error("house_number")
 
+            required_label("Street")
             street = st.text_input(
-                "Street",
+                "",
                 placeholder="e.g. Rue de la Loi",
                 key="street"
+                , label_visibility="collapsed"
             )
             show_error("street")
 
+            required_label("Postcode")
             postcode = st.text_input(
-                "Postcode",
+                "",
                 placeholder="e.g. 1000",
                 key="postcode"
+                , label_visibility="collapsed"
             )
             show_error("postcode")
             
         with col2:
 
+            required_label("Province")
             province = st.selectbox(
-                "Province",
+                "",
                 options=list(PROVINCES.keys()),  
                 format_func=lambda key: PROVINCES[key],
                 index=None,
                 placeholder="Select a province",
-                key="province"
+                key="province",
+                label_visibility="collapsed"
             )
             show_error("province")
 
+            required_label("Property City")
             city = st.selectbox(
-                "Property City",
+                "",
                 options=sorted(
                     cities_df["Municipality_NL"]
                     .dropna()
@@ -630,17 +649,20 @@ with st.form("property_form"):
                 ),
                 index=None,
                 placeholder="Type or select a city",
-                key="city"
+                key="city",
+                label_visibility="collapsed"
             )
             show_error("city")
             
+            required_label("Nearest Major City")
             nearest_city = st.selectbox(
-                "Nearest Major City",
+                "",
                 options=list(BIG_CITIES.keys()),  
                 format_func=lambda key: BIG_CITIES[key]["name"],
                 index=None,
                 placeholder="Select a city",
-                key="nearest_city"
+                key="nearest_city",
+                label_visibility="collapsed"
             )
             show_error("nearest_city")
 
