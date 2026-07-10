@@ -4,12 +4,15 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 from math import radians, sin, cos, sqrt, atan2
 from pathlib import Path
+import time
 
 # ==========================
 # CONFIG
 # ==========================
 
 API_URL = st.secrets["API_URL"]
+API_TIMEOUTS = [(5, 15), (5, 30)]
+API_RETRY_DELAY_SECONDS = 1.2
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -302,6 +305,34 @@ if "submitted" not in st.session_state:
 geolocator = Nominatim(
     user_agent="immo-eliza"
 )
+
+
+def call_prediction_api(payload):
+    """
+    Retry prediction request to handle first-call cold starts on hosted backends.
+    Uses separate connect/read timeouts and increases read timeout on retry.
+    """
+    last_exception = None
+
+    for attempt, timeout in enumerate(API_TIMEOUTS, start=1):
+        try:
+            response = requests.post(
+                API_URL,
+                json=payload,
+                timeout=timeout
+            )
+            return response
+        except requests.exceptions.Timeout as exc:
+            last_exception = exc
+
+            if attempt < len(API_TIMEOUTS):
+                time.sleep(API_RETRY_DELAY_SECONDS)
+                continue
+
+            raise
+
+    if last_exception:
+        raise last_exception
 
 def get_coordinates(address):
 
@@ -786,12 +817,7 @@ if st.session_state.submitted:
         with st.spinner(
             "🤖 AI is estimating the price..."
         ):
-
-            response = requests.post(
-                API_URL,
-                json=payload,
-                timeout=10
-            )
+            response = call_prediction_api(payload)
 
         if response.status_code != 200:
             st.error(
@@ -835,10 +861,14 @@ if st.session_state.submitted:
     except requests.exceptions.Timeout:
 
         st.error(
-            "API timeout. Server took too long."
+            "API timeout on initial call. Please retry in a few seconds."
         )
 
     except Exception as e:
         st.error(
             f"Unexpected error: {e}"
         )
+
+    finally:
+        # Prevent reruns from re-triggering the same API call automatically.
+        st.session_state.submitted = False
