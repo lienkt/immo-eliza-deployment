@@ -380,6 +380,15 @@ with st.form("property_form"):
                 key="property_type"
             )
 
+            bedrooms = st.number_input(
+                "Bedrooms",
+                min_value=0,
+                max_value=20,
+                value=2,
+                key="bedrooms"
+            )
+            show_error("bedrooms")
+
         with col2:
             property_state = st.selectbox(
                 "Property Condition",
@@ -390,15 +399,16 @@ with st.form("property_form"):
                 ],
                 key="property_state"
             )
-            bedrooms = st.number_input(
-                "Bedrooms",
-                min_value=0,
-                max_value=20,
-                value=2,
-                key="bedrooms"
-            )
-            show_error("bedrooms")
             
+            build_year = st.number_input(
+                "Build Year",
+                min_value=1850,
+                max_value=2026,
+                value=2000,
+                key="build_year"
+            )
+            show_error("build_year")
+            show_warning("build_year")
     # ======================
     # SURFACE
     # ======================
@@ -417,6 +427,7 @@ with st.form("property_form"):
             )
             show_error("livable_surface")
 
+        with col2:
             total_surface = st.number_input(
                 "Total Surface (m²)",
                 min_value=0,
@@ -424,18 +435,6 @@ with st.form("property_form"):
                 key="total_surface"
             )
             show_error("total_surface")
-
-        with col2:
-
-            build_year = st.number_input(
-                "Build Year",
-                min_value=1850,
-                max_value=2026,
-                value=2000,
-                key="build_year"
-            )
-            show_error("build_year")
-            show_warning("build_year")
 
     # ======================
     # FEATURES
