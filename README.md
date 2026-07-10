@@ -212,13 +212,44 @@ If you deploy the API, update `API_URL` to your deployed endpoint.
 - Model file is loaded from `api/ml/models/xgb_model.pkl`.
 - Inference applies: 1. Request dict -> pandas DataFrame 2. Optional feature engineering (`house_age = 2026 - build_year`) 3. Model prediction 4. Inverse log transform: `price = 10 ** prediction`
 
-## Current Deployment/Docker Status
+## Docker (API)
 
-- `api/Dockerfile` currently exists but is empty.
-- Deployment instructions should be completed after the Dockerfile is implemented.
+The API is containerized with [api/Dockerfile](api/Dockerfile) and uses Python 3.14.
+
+Build the image from the project root:
+
+```bash
+docker build -t immo-api ./api
+```
+
+Run the container locally:
+
+```bash
+docker run --rm -p 8000:8000 --name immo-api immo-api
+```
+
+Test the health endpoint:
+
+```bash
+curl http://127.0.0.1:8000/
+```
+
+Stop the container:
+
+```bash
+docker stop immo-api
+```
+
+Notes:
+
+- The container command is `uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}`.
+- `PORT` is automatically used on hosting platforms (for example Render).
 
 ## Troubleshooting
 
-- `ModuleNotFoundError` when starting API: - Run from the `api` directory (`cd api`) before `uvicorn app:app --reload`.
-- Streamlit shows API timeout/error: - Confirm API is running and `API_URL` in Streamlit secrets points to `/api/v1/predict`.
-- Geocoding fails for an address: - Recheck street/postcode/city spelling in the Streamlit form.
+- `ModuleNotFoundError` when starting API:
+  - Run from the `api` directory (`cd api`) before `uvicorn app:app --reload`.
+- Streamlit shows API timeout/error:
+  - Confirm API is running and `API_URL` in Streamlit secrets points to `/api/v1/predict`.
+- Geocoding fails for an address:
+  - Recheck street/postcode/city spelling in the Streamlit form.
