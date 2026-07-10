@@ -6,12 +6,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # Install Python dependencies first for better layer caching.
-COPY requirements.txt .
+COPY api/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
   pip install --no-cache-dir -r requirements.txt
 
 # Copy API source code, including model artifacts.
-COPY . .
+COPY api/. .
 
 EXPOSE 8000
 
