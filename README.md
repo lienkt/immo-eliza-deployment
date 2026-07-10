@@ -1,6 +1,6 @@
-# Immo Eliza - House Price Prediction API
+# Immo Eliza Deployment
 
-A machine learning deployment project that exposes a real estate price prediction model through a FastAPI API and provides a Streamlit interface for non-technical users.
+Machine learning deployment project for Belgian real estate price estimation.
 
 The project contains:
 
@@ -13,124 +13,49 @@ The project contains:
 
 # Architecture
 
-```
-                 User
-                  |
-                  |
-                  v
-            Streamlit App
-                  |
-                  |
-                  v
-          FastAPI Prediction API
-                  |
-                  |
-                  v
-          Prediction Service
-                  |
-                  |
-                  v
-          ML Prediction Pipeline
-                  |
-                  |
-                  v
-        Trained Model + Artifacts
+```text
+User -> Streamlit UI -> FastAPI (/api/v1/predict) -> ML inference -> Predicted price
 ```
 
----
+## Project Structure
 
-# Project Structure
-
-```
+```text
 immo-eliza-deployment/
-
-│
 ├── api/
-│   │
-│   ├── __init__.py
-│   ├── app.py                      # FastAPI application entry point
+│   ├── app.py
 │   ├── requirements.txt
 │   ├── Dockerfile
-│   │
-│   ├── routers/                    # API routes
-│   │   ├── __init__.py
-│   │   └── prediction.py
-│   │
-│   ├── schemas/                    # Request/Response validation
-│   │   ├── __init__.py
-│   │   └── prediction.py
-│   │
-│   ├── services/                   # Business logic
-│   │   ├── __init__.py
-│   │   └── prediction_service.py
-│   │
-│   ├── ml/                         # Machine learning layer
-│   │   ├── __init__.py
+│   ├── core/
+│   ├── ml/
 │   │   ├── predict.py
 │   │   └── models/
-│   │       ├── xgb_model.pkl
-│   │
-│   └── core/
-│       ├── __init__.py
-│       └── config.py
-│
-│
+│   │       └── xgb_model.pkl
+│   ├── routers/
+│   │   └── prediction.py
+│   ├── schemas/
+│   │   └── prediction.py
+│   └── services/
+│       └── prediction_service.py
 ├── streamlit/
-│   ├── app.py                      # Streamlit frontend
-│   └── requirements.txt
-│
-├── README.md
-└── .gitignore
+│   ├── app.py
+│   ├── requirements.txt
+│   ├── data/
+│   │   └── communicipalities.csv
+│   └── testing/
+│       └── test.ipynb
+└── README.md
 ```
 
----
+## API
 
-# API Request Flow
-
-```
-Client Request
-
-      |
-      v
-
-routers/prediction.py
-
-      |
-      v
-
-services/prediction_service.py
-
-      |
-      v
-
-ml/predict.py
-
-      |
-      v
-
-Machine Learning Model
-
-      |
-      v
-
-Prediction Response
-```
-
----
-
-# Features
-
-## FastAPI Backend
-
-Available endpoints:
+Base URL (local): `http://127.0.0.1:8000`
 
 ### Health Check
 
-```
-GET /
-```
+- Method: `GET`
+- Path: `/`
 
-Response:
+Example response:
 
 ```json
 {
@@ -138,41 +63,34 @@ Response:
 }
 ```
 
----
+### Predict Price
 
----
+- Method: `POST`
+- Path: `/api/v1/predict`
 
-# Prediction Features
+Request body (schema summary):
 
-The API accepts the following features:
-
-| Feature                | Type    | Description                |
-| ---------------------- | ------- | -------------------------- |
-| property_type          | str     | Property type              |
-| city                   | str     | City location              |
-| province               | str     | Province location          |
-| latitude               | float64 | Latitude coordinate        |
-| longitude              | float64 | Longitude coordinate       |
-| property_state         | str     | Property condition         |
-| build_year             | int64   | Construction year          |
-| bedroom_count          | float64 | Number of bedrooms         |
-| livable_surface        | float64 | Living surface area        |
-| total_surface          | float64 | Total surface area         |
-| garage                 | int64   | Garage availability        |
-| terrace                | float64 | Terrace availability       |
-| energy_consumption     | float64 | Energy consumption         |
-| swimming_pool          | int64   | Swimming pool availability |
-| preschool_distance     | float64 | Distance to preschool      |
-| train_station_distance | float64 | Distance to train station  |
-| supermarket_distance   | float64 | Distance to supermarket    |
-| nearest_city           | str     | Closest city               |
-| nearest_city_distance  | float64 | Distance to nearest city   |
-
-### House Price Prediction
-
-```
-POST /api/v1/prediction
-```
+| Field                  | Type   | Required |
+| ---------------------- | ------ | -------- |
+| property_type          | string | yes      |
+| city                   | string | yes      |
+| province               | string | yes      |
+| latitude               | float  | no       |
+| longitude              | float  | no       |
+| property_state         | string | no       |
+| build_year             | int    | no       |
+| bedroom_count          | int    | no       |
+| livable_surface        | float  | no       |
+| total_surface          | float  | no       |
+| garage                 | int    | no       |
+| terrace                | int    | no       |
+| swimming_pool          | int    | no       |
+| energy_consumption     | float  | no       |
+| preschool_distance     | float  | no       |
+| train_station_distance | float  | no       |
+| supermarket_distance   | float  | no       |
+| nearest_city           | string | no       |
+| nearest_city_distance  | float  | no       |
 
 Example request:
 
@@ -195,7 +113,7 @@ Example request:
   "preschool_distance": 796,
   "train_station_distance": 1000,
   "supermarket_distance": 181,
-  "nearest_city": "Antwerp",
+  "nearest_city": "antwerp",
   "nearest_city_distance": 6.07
 }
 ```
@@ -209,301 +127,98 @@ Example response:
 }
 ```
 
----
+### Quick cURL test
 
-# Local Installation
+```bash
+curl -X POST "http://127.0.0.1:8000/api/v1/predict" \
+      -H "Content-Type: application/json" \
+      -d '{
+            "property_type": "house",
+            "city": "Brussels",
+            "province": "brussels",
+            "bedroom_count": 3,
+            "livable_surface": 140,
+            "total_surface": 180
+      }'
+```
 
-## 1. Clone repository
+## Local Setup
+
+### 1. Clone and enter project
 
 ```bash
 git clone <repository-url>
-
 cd immo-eliza-deployment
 ```
 
----
-
-# Running FastAPI Locally
-
-## 1. Move into API folder
-
-```bash
-cd api
-```
-
-## 2. Create virtual environment
+### 2. Create and activate a virtual environment (recommended at repo root)
 
 ```bash
 python -m venv .venv
-```
-
-Activate:
-
-### Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-### Mac/Linux
-
-```bash
 source .venv/bin/activate
 ```
 
----
-
-## 3. Install dependencies
+Windows (PowerShell):
 
 ```bash
-pip install -r requirements.txt
+.venv\Scripts\Activate.ps1
 ```
 
----
+### 3. Install dependencies
 
-## 4. Start FastAPI server
+```bash
+pip install -r api/requirements.txt
+pip install -r streamlit/requirements.txt
+```
+
+## Run the API
+
+From the repository root:
 
 ```bash
 cd api
 uvicorn app:app --reload
 ```
 
-API available at:
+Useful links:
 
-```
-http://localhost:8000
-```
+- API root: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
 
-Swagger documentation:
+## Run the Streamlit App
 
-```
-http://localhost:8000/docs
-```
-
----
-
-# Running Streamlit Application
-
-Open another terminal:
+Open a second terminal (same virtual environment), then:
 
 ```bash
 cd streamlit
-```
-
-Create environment:
-
-```bash
-python -m venv .venv
-```
-
-Activate environment:
-
-```bash
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run Streamlit:
-
-```bash
 streamlit run app.py
 ```
 
-The application will run at:
+Streamlit URL: `http://127.0.0.1:8501`
 
-http://localhost:8501
+## Streamlit Configuration
 
----
+The Streamlit app reads the API endpoint from secrets:
 
-# Docker Deployment
-
-Build API image:
-
-```bash
-docker build -t immo-api ./api
+```toml
+# streamlit/.streamlit/secrets.toml
+API_URL = "http://127.0.0.1:8000/api/v1/predict"
 ```
 
-Run container:
+If you deploy the API, update `API_URL` to your deployed endpoint.
 
-```bash
-docker run -p 8000:10000 immo-api
-```
+## Model Notes
 
-The API will be available at:
+- Model file is loaded from `api/ml/models/xgb_model.pkl`.
+- Inference applies: 1. Request dict -> pandas DataFrame 2. Optional feature engineering (`house_age = 2026 - build_year`) 3. Model prediction 4. Inverse log transform: `price = 10 ** prediction`
 
-```
-http://localhost:8000
-```
+## Current Deployment/Docker Status
 
----
+- `api/Dockerfile` currently exists but is empty.
+- Deployment instructions should be completed after the Dockerfile is implemented.
 
-# Deployment
+## Troubleshooting
 
-## Backend
-
-The FastAPI application is deployed using:
-
-- Docker
-- Render
-
-## Frontend
-
-The Streamlit application is deployed using:
-
-- Streamlit Community Cloud
-
----
-
-# Machine Learning Model
-
-The API loads:
-
-- trained regression model
-- preprocessing pipeline
-- encoding/scaling artifacts
-
-The prediction pipeline:
-
-```
-Input JSON
-      |
-      v
-Pandas DataFrame
-      |
-      v
-Saved sklearn Pipeline
-      |
-      |
-      ├── ColumnTransformer
-      │       |
-      │       ├── Numerical
-      │       │       ├── KNNImputer
-      │       │       └── StandardScaler
-      │       │
-      │       └── Categorical
-      │               ├── SimpleImputer
-      │               └── OneHotEncoder
-      |
-      v
-XGBRegressor
-      |
-      v
-log10(price)
-      |
-      v
-10 ** prediction
-      |
-      v
-House price (€)
-```
-
----
-
-# Model Artifact
-
-```text
-The deployed model:
-
-xgb_model.pkl
-├── Preprocessor
-│   ├── Numerical Pipeline
-│   │   ├── StandardScaler
-│   │   └── KNNImputer
-│   └── Categorical Pipeline
-│       ├── SimpleImputer (most_frequent)
-│       └── OneHotEncoder
-└── XGBRegressor
-```
-
-# 🎨 Streamlit Frontend Application
-
-The project includes a Streamlit frontend application that allows users to predict house prices through a simple web interface.
-
-The Streamlit application is only responsible for:
-
-- Collecting user inputs
-- Sending prediction requests to FastAPI
-- Displaying prediction results
-
-The machine learning model is hosted inside the FastAPI backend.
-
----
-
-# Streamlit Architecture
-
-User
-|
-v
-Streamlit Web App
-|
-| HTTP POST Request
-|
-v
-FastAPI Prediction API
-|
-v
-Prediction Service
-|
-v
-XGBRegressor Pipeline
-|
-v
-Predicted House Price (€)
-
----
-
-# Streamlit User Interface
-
-The application provides a property prediction form where users can enter:
-
-| Feature                | Type  |
-| ---------------------- | ----- |
-| property_type          | str   |
-| city                   | str   |
-| province               | str   |
-| latitude               | float |
-| longitude              | float |
-| property_state         | str   |
-| build_year             | int   |
-| bedroom_count          | float |
-| livable_surface        | float |
-| total_surface          | float |
-| garage                 | int   |
-| terrace                | int   |
-| energy_consumption     | float |
-| swimming_pool          | int   |
-| preschool_distance     | float |
-| train_station_distance | float |
-| supermarket_distance   | float |
-| nearest_city           | str   |
-| nearest_city_distance  | float |
-
----
-
-# Technologies
-
-- Python
-- FastAPI
-- Pydantic
-- Scikit-learn
-- Pandas
-- Docker
-- Render
-- Streamlit
-
----
-
-# Future Improvements
-
-Possible improvements:
-
-- Add automated tests
-- Add logging
-- Add model versioning
-- Add authentication
-- Add database for prediction history
+- `ModuleNotFoundError` when starting API: - Run from the `api` directory (`cd api`) before `uvicorn app:app --reload`.
+- Streamlit shows API timeout/error: - Confirm API is running and `API_URL` in Streamlit secrets points to `/api/v1/predict`.
+- Geocoding fails for an address: - Recheck street/postcode/city spelling in the Streamlit form.
