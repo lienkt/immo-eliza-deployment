@@ -93,6 +93,70 @@ st.markdown(
     """
     <style>
 
+    .hero {
+        background: linear-gradient(
+            135deg,
+            #1f4e79 0%,
+            #2e86c1 100%
+        );
+        border-radius: 20px;
+        padding: 28px;
+        margin-bottom: 24px;
+        color: #ffffff;
+        box-shadow: 0 10px 24px rgba(31, 78, 121, 0.25);
+    }
+
+    .hero-badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .hero-title {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.1;
+        margin-bottom: 10px;
+    }
+
+    .hero-subtitle {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #e8f2ff;
+    }
+
+    .hero-desc {
+        font-size: 16px;
+        max-width: 760px;
+        color: #f4f8ff;
+    }
+
+    @media (max-width: 768px) {
+        .hero {
+            padding: 20px;
+            border-radius: 16px;
+        }
+
+        .hero-title {
+            font-size: 30px;
+        }
+
+        .hero-subtitle {
+            font-size: 17px;
+        }
+
+        .hero-desc {
+            font-size: 14px;
+        }
+    }
+
     /* Remove form border */
     div[data-testid="stForm"] {
         border: none;
@@ -151,6 +215,51 @@ st.markdown(
             0px 10px 20px rgba(0,0,0,0.25);
     }
 
+    .result-card {
+        background: linear-gradient(
+            135deg,
+            #f7fbff 0%,
+            #eef5fb 100%
+        );
+        border: 1px solid #cfe0ef;
+        border-left: 6px solid #2e86c1;
+        border-radius: 20px;
+        padding: 22px;
+        margin: 10px 0 14px 0;
+        color: #183b5f;
+        box-shadow: 0 6px 14px rgba(31, 78, 121, 0.10);
+    }
+
+    .result-label {
+        font-size: 13px;
+        letter-spacing: 0.4px;
+        opacity: 0.85;
+        margin-bottom: 8px;
+    }
+
+    .result-price {
+        font-size: 44px;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 8px;
+        color: #1f4e79;
+    }
+
+    .result-sub {
+        font-size: 15px;
+        color: #3e6688;
+    }
+
+    @media (max-width: 768px) {
+        .result-price {
+            font-size: 34px;
+        }
+
+        .result-sub {
+            font-size: 14px;
+        }
+    }
+
     </style>
     """,
     unsafe_allow_html=True
@@ -159,17 +268,19 @@ st.markdown(
 # ==========================
 # HEADER
 # ==========================
-st.title("🏠 Immo Eliza")
-
-st.subheader(
-    "Belgian House Price Estimation"
-)
-
-st.write(
+st.markdown(
     """
-    Enter property information.
-    The AI model will estimate the market price.
-    """
+    <section class="hero">
+        <div class="hero-badge">AI PROPERTY VALUATION</div>
+        <div class="hero-title">🏠 Immo Eliza</div>
+        <div class="hero-subtitle">Belgian House Price Estimation</div>
+        <div class="hero-desc">
+            Enter property details and location data to receive a fast, data-driven market estimate.
+            The model uses geospatial and property attributes to generate a realistic price prediction.
+        </div>
+    </section>
+    """,
+    unsafe_allow_html=True
 )
 
 # ==========================
@@ -366,7 +477,7 @@ with st.form("property_form"):
     # PROPERTY
     # ======================
     with st.container(border=True):
-        st.header("🏡 Property Information")
+        st.subheader("Property Information")
 
         col1,col2 = st.columns(2)
 
@@ -414,24 +525,29 @@ with st.form("property_form"):
     # ======================
     with st.container(border=True):
 
-        st.header("📐 Surface Information")
+        st.subheader("Surface Information")
 
         col1,col2 = st.columns(2)
 
         with col1:
-            livable_surface = st.number_input(
+            livable_surface = st.slider(
                 "Living Area (m²)",
                 min_value=0,
-                value=0,
-                key="livable_surface"
+                value=80,
+                step=10,
+                key="livable_surface",
+                max_value=1000,
+                help="Drag to adjust living area quickly."
             )
             show_error("livable_surface")
 
         with col2:
-            total_surface = st.number_input(
+            total_surface = st.slider(
                 "Total Surface (m²)",
                 min_value=0,
-                value=0,
+                value=120,
+                step=10,
+                max_value=2000,
                 key="total_surface"
             )
             show_error("total_surface")
@@ -440,7 +556,7 @@ with st.form("property_form"):
     # FEATURES
     # ======================
     with st.container(border=True):
-        st.header("⚙️ Features")
+        st.subheader("Features")
 
         col1,col2,col3 = st.columns(3)
 
@@ -466,7 +582,7 @@ with st.form("property_form"):
     # LOCATION
     # ======================
     with st.container(border=True):
-        st.header("📍 Location")
+        st.subheader("Location")
 
         col1,col2 = st.columns(2)
 
@@ -532,35 +648,42 @@ with st.form("property_form"):
     # ACCESSIBILITY
     # ======================
     with st.container(border=True):
-        st.header("🚉 Accessibility")
+        st.subheader("Accessibility")
 
-        energy_consumption = st.number_input(
+        energy_consumption = st.slider(
             "Energy Consumption (kWh/m²/year)",
             min_value=0,
             max_value=1000,
             value=0,
+            step=10,
             key="energy_consumption"
         )
         show_warning("energy_consumption")
 
-        preschool_distance = st.number_input(
+        preschool_distance = st.slider(
             "Preschool Distance (m)",
             min_value=0,
             value=0,
+            max_value=20000,
+            step=10,
             key="preschool_distance"
         )
 
-        train_station_distance = st.number_input(
+        train_station_distance = st.slider(
             "Train Station Distance (m)",
             min_value=0,
             value=0,
+            max_value=20000,
+            step=10,
             key="train_station_distance"
         )
 
-        supermarket_distance = st.number_input(
+        supermarket_distance = st.slider(
             "Supermarket Distance (m)",
             min_value=0,
             value=0,
+            max_value=20000,
+            step=10,
             key="supermarket_distance"
         )
         
@@ -589,8 +712,6 @@ if st.session_state.submitted:
 
     full_address = f"{house_number} {street}, {postcode} {city}, Belgium"
 
-    st.write("Address:", full_address)
-
     latitude, longitude = get_coordinates(
         full_address
     )
@@ -599,9 +720,6 @@ if st.session_state.submitted:
             "Cannot find this address. Please check street, postcode and city."
         )
         st.stop()
-
-    st.write("Latitude:", latitude)
-    st.write("Longitude:", longitude)
 
     nearest_city_distance = haversine_distance(
         latitude,
@@ -663,25 +781,33 @@ if st.session_state.submitted:
         result = response.json()
 
         prediction = result["prediction"]
+        price_per_m2 = (
+            prediction / livable_surface
+            if livable_surface > 0
+            else None
+        )
 
         st.success(
             "Estimation completed!"
         )
 
-        st.metric(
-            "🏠 Estimated Property Price",
-            f"€ {prediction:,.0f}"
+        st.markdown(
+            f"""
+            <div class="result-card">
+                <div class="result-label">ESTIMATED PROPERTY PRICE</div>
+                <div class="result-price">€ {prediction:,.0f}</div>
+                <div class="result-sub">
+                    Estimated price per m²: {"€ " + format(price_per_m2, ",.0f") if price_per_m2 is not None else "N/A"}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
 
-        if livable_surface > 0:
-
-            price_per_m2 = (
-                prediction /
-                livable_surface
-            )
-
-            st.info(
-                f"Estimated price per m²: € {price_per_m2:,.0f}"
+        with st.expander("Location details", expanded=False):
+            st.write(f"Address: {full_address}")
+            st.caption(
+                f"Latitude: {latitude:.6f} | Longitude: {longitude:.6f}"
             )
 
     except requests.exceptions.Timeout:
