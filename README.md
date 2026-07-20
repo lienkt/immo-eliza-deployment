@@ -195,6 +195,7 @@ streamlit run app.py
 ```
 
 Streamlit URL: `http://127.0.0.1:8501`
+Deployed frontend: `https://belgian-immo-eliza.streamlit.app/`
 
 ## Streamlit Configuration
 
@@ -205,7 +206,11 @@ The Streamlit app reads the API endpoint from secrets:
 API_URL = "http://127.0.0.1:8000/api/v1/predict"
 ```
 
-If you deploy the API, update `API_URL` to your deployed endpoint.
+Use `API_URL` for local development, or point it to your public deployment:
+
+```toml
+API_URL = "https://immo-eliza-deployment-2-c13f.onrender.com/api/v1/predict"
+```
 
 ## Model Notes
 
